@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Money Exchange — Shubh Mehta vs Duc Viet Bui (Infinite Chickens)</title>
+  <style>
+    :root{
+      --bg:#0f1724; --panel:#0b1220; --accent:#ffb86b; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);
+      --g1:#0ea5a4; --g2:#7c3aed;
+    }
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071018);color:#e6eef8}
+    .wrap{display:grid;grid-template-columns:420px 1fr;gap:18px;padding:18px;height:100vh}
+    .panel{background:linear-gradient(180deg,var(--panel),#071224);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6);overflow:hidden}
+
+    /* left column */
+    .brand{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+    .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,var(--g1),var(--g2));display:flex;align-items:center;justify-content:center;font-weight:700}
+    .title{font-size:16px;font-weight:700}
+    .subtitle{font-size:12px;color:var(--muted)}
+
+    .empire{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);margin-bottom:10px}
+    .empire .flag{font-size:30px}
+    .empire .meta{flex:1}
+    .wallet{display:flex;gap:6px;align-items:baseline}
+    .wallet .amount{font-size:18px;font-weight:800}
+    .controls{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+    .controls input[type=range]{width:100%}
+    .btn{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:700;color:#08111a}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+    .chat{height:200px;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.012), transparent); padding:10px;border-radius:10px}
+    .chat .line{font-size:13px;margin-bottom:6px}
+    .small{font-size:12px;color:var(--muted)}
+
+    /* right: simulation */
+    .scene{position:relative;height:100%;display:flex;flex-direction:column}
+    .arena{flex:1;background:radial-gradient(circle at 10% 10%, rgba(124,58,237,0.06), transparent 8%), linear-gradient(180deg,#041224 0%, #061422 100%);border-radius:12px;padding:8px;position:relative;overflow:hidden}
+    .hud{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
+    .stats{display:flex;gap:12px;align-items:center}
+    .stat{background:var(--glass);padding:8px 10px;border-radius:10px;color:var(--muted)}
+
+    /* chicken visuals */
+    .chicken{position:absolute;font-size:22px;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,0.6);user-select:none}
+    .particle{position:absolute;font-size:14px;pointer-events:none}
+
+    /* footer */
+    .footer{font-size:12px;color:var(--muted);margin-top:8px}
+
+    /* responsive */
+    @media (max-width:900px){.wrap{grid-template-columns:1fr;grid-auto-rows:380px}} 
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="brand">
+        <div class="logo">💱</div>
+        <div>
+          <div class="title">Empire Exchange — Infinite Chickens</div>
+          <div class="subtitle">A playful economy & battle simulator between two empires</div>
+        </div>
+      </div>
+
+      <div id="empires">
+        <div class="empire" id="empireA">
+          <div class="flag">🏰</div>
+          <div class="meta">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong>Shubh Mehta's Empire</strong></div>
+              <div class="small">Currency: <span id="curA">SM$</span></div>
+            </div>
+            <div class="wallet"><div class="amount" id="walletA">1,000,000</div><div class="small">coins</div></div>
+            <div class="controls">
+              <label class="small">Spawn chickens (A)</label>
+              <div style="display:flex;gap:6px"><button class="btn" id="spawnA">Spawn 10</button><button class="btn ghost" id="spawnA_inf">Spawn infinite</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="empire" id="empireB">
+          <div class="flag">🛡️</div>
+          <div class="meta">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong>Duc Viet Bui's Empire</strong></div>
+              <div class="small">Currency: <span id="curB">DV₫</span></div>
+            </div>
+            <div class="wallet"><div class="amount" id="walletB">900,000</div><div class="small">coins</div></div>
+            <div class="controls">
+              <label class="small">Spawn chickens (B)</label>
+              <div style="display:flex;gap:6px"><button class="btn" id="spawnB">Spawn 10</button><button class="btn ghost" id="spawnB_inf">Spawn infinite</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:12px 0">
+
+      <div>
+        <label class="small">Exchange rate (1 SM$ → x DV₫)</label>
+        <input type="range" id="rate" min="0.2" max="5" step="0.05" value="1.25">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <div class="small">Rate: <strong id="rateValue">1.25</strong></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" id="exchangeSmall">Exchange 5000</button>
+            <button class="btn ghost" id="swap">Swap Currencies</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <div class="small">Automated ChatGPT envoys</div>
+        <div class="chat" id="chat"></div>
+      </div>
+
+      <div class="footer">Tip: use the arena to watch chickens fight — when a chicken wins, glory (and coins) flow to their empire. "Infinite" mode will keep spawning chickens until you stop it.</div>
+    </div>
+
+    <div class="scene">
+      <div class="panel arena" id="arena">
+        <!-- chickens will be injected here -->
+      </div>
+
+      <div class="hud">
+        <div class="stats">
+          <div class="stat">Chickens alive: <span id="alive">0</span></div>
+          <div class="stat">Battles: <span id="battles">0</span></div>
+          <div class="stat">Total glory: <span id="glory">0</span></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn ghost" id="pause">Pause</button>
+          <button class="btn" id="clear">Clear Arena</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ------- Simulation Globals ------- */
+    const arena = document.getElementById('arena');
+    const walletAEl = document.getElementById('walletA');
+    const walletBEl = document.getElementById('walletB');
+    const curA = document.getElementById('curA');
+    const curB = document.getElementById('curB');
+    const rateEl = document.getElementById('rate');
+    const rateValue = document.getElementById('rateValue');
+    const aliveEl = document.getElementById('alive');
+    const battlesEl = document.getElementById('battles');
+    const gloryEl = document.getElementById('glory');
+    const chatEl = document.getElementById('chat');
+
+    let state = {
+      wallets: {A: 1000000, B: 900000},
+      exchangeRate: parseFloat(rateEl.value),
+      chickens: [],
+      battles:0,
+      glory:0,
+      running:true,
+      infA:false, infB:false
+    };
+
+    function fmt(n){return Math.floor(n).toLocaleString()}
+    function updateWallets(){walletAEl.textContent = fmt(state.wallets.A); walletBEl.textContent = fmt(state.wallets.B)}
+    updateWallets(); rateValue.textContent = state.exchangeRate;
+
+    /* ------- ChatGPT envoys (playful automated messages) ------- */
+    const chatVoices = [
+      {who:'ChatGPT Envoy A',prefix:'🤖A'},
+      {who:'ChatGPT Envoy B',prefix:'🤖B'}
+    ];
+    function postChat(text){const d=document.createElement('div');d.className='line';d.textContent=text;chatEl.appendChild(d);chatEl.scrollTop = chatEl.scrollHeight;}
+
+    // Periodic snippets
+    const snippets = [
+      'Analyzing poultry market dynamics... supply shock incoming.',
+      'Converting war glory to coin — ledger entry complete.',
+      'Deploying 12 cavalry chickens to hold the ridge.',
+      'Infinite wallets mode engaged — printing virtual coins!',
+      'Negotiating exchange rate with a mysterious oracle.',
+      'A chicken just wrote a haiku about coins.'
+    ];
+    setInterval(()=>{
+      const s = snippets[Math.floor(Math.random()*snippets.length)];
+      const v = chatVoices[Math.floor(Math.random()*chatVoices.length)];
+      postChat(`${v.prefix} ${v.who}: "${s}"`);
+    },4800);
+
+    /* ------- Chicken class ------- */
+    class Chicken{
+      constructor(empire){
+        this.id = Math.random().toString(36).slice(2,9);
+        this.empire = empire; // 'A' or 'B'
+        this.hp = 10 + Math.random()*8; // health
+        this.size = 18 + Math.random()*12; // for display
+        this.x = Math.random()*(arena.clientWidth-60)+30;
+        this.y = Math.random()*(arena.clientHeight-60)+30;
+        this.vx = (Math.random()-0.5)*1.6;
+        this.vy = (Math.random()-0.5)*1.6;
+        this.el = document.createElement('div');
+        this.el.className = 'chicken';
+        this.el.style.fontSize = this.size+'px';
+        this.el.innerHTML = this.empire==='A'? '🐔' : '🍗';
+        arena.appendChild(this.el);
+        this.updateEl();
+      }
+      updateEl(){this.el.style.transform = `translate(${this.x}px, ${this.y}px)`; this.el.style.opacity = Math.max(0.2, this.hp/18);
+      }
+      step(dt){
+        this.x += this.vx*dt; this.y += this.vy*dt;
+        // bounce
+        if(this.x < 6 || this.x > arena.clientWidth-40) this.vx *= -1;
+        if(this.y < 6 || this.y > arena.clientHeight-40) this.vy *= -1;
+        // slight wandering
+        this.vx += (Math.random()-0.5)*0.06; this.vy += (Math.random()-0.5)*0.06;
+        this.updateEl();
+      }
+      remove(){try{arena.removeChild(this.el)}catch(e){}}
+    }
+
+    /* ------- Simulation loop ------- */
+    let last = performance.now();
+    function loop(now){
+      const dt = (now-last)/16.666; last = now;
+      if(state.running){
+        // update chickens
+        for(let c of state.chickens){
+          c.step(dt);
+        }
+        // collisions
+        for(let i=0;i<state.chickens.length;i++){
+          for(let j=i+1;j<state.chickens.length;j++){
+            const a = state.chickens[i], b = state.chickens[j];
+            if(a.empire===b.empire) continue;
+            const dx = a.x-b.x, dy = a.y-b.y; const d2 = dx*dx+dy*dy;
+            const minD = ((a.size+b.size)/2 + 6);
+            if(d2 < minD*minD){
+              // battle!
+              const dmg = 0.6 + Math.random()*1.8;
+              a.hp -= dmg; b.hp -= dmg;
+              a.vx *= -1.1; b.vx *= -1.1; // bounce back
+              // particles
+              spawnParticle((a.x+b.x)/2, (a.y+b.y)/2, '⚔️');
+              if(a.hp <= 0 || b.hp <= 0){
+                state.battles += 1; battlesEl.textContent = state.battles;
+                // determine winner
+                const winner = (a.hp>b.hp)? a : b;
+                const loser = (a.hp>b.hp)? b : a;
+                awardGlory(winner.empire);
+                // remove loser
+                loser.remove(); state.chickens = state.chickens.filter(x=>x!==loser);
+                // tiny coin transfer
+                const transfer = Math.floor(200 + Math.random()*1200);
+                if(winner.empire==='A'){ state.wallets.A += transfer; state.wallets.B -= transfer/2; }
+                else{ state.wallets.B += transfer; state.wallets.A -= transfer/2; }
+                updateWallets();
+                aliveEl.textContent = state.chickens.length;
+              }
+            }
+          }
+        }
+        // cleanup dead chickens (if hp<=0 but missed above)
+        const removed = state.chickens.filter(c=>c.hp<=0);
+        for(const r of removed){ r.remove(); state.chickens = state.chickens.filter(x=>x!==r); }
+        aliveEl.textContent = state.chickens.length;
+
+        // infinite spawn modes
+        if(state.infA){ spawnChickens('A', 2); }
+        if(state.infB){ spawnChickens('B', 2); }
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    /* ------- Particles & Glory ------- */
+    function spawnParticle(x,y,char){
+      const p = document.createElement('div'); p.className='particle'; p.textContent = char; arena.appendChild(p);
+      p.style.left = (x)+'px'; p.style.top = (y)+'px';
+      let life = 60 + Math.random()*30; const vx = (Math.random()-0.5)*2; const vy = -1.5 - Math.random()*1.2;
+      function step(){ life--; x += vx; y += vy; p.style.left = x+'px'; p.style.top = y+'px'; p.style.opacity = Math.max(0, life/120);
+        if(life<=0){ try{arena.removeChild(p)}catch(e){} } else requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    function awardGlory(empire){ state.glory += 1; gloryEl.textContent = state.glory; spawnParticle(Math.random()*arena.clientWidth, Math.random()*arena.clientHeight, '✨'); postChat(`🏆 Glory awarded to Empire ${empire}!`); }
+
+    /* ------- Spawn helpers ------- */
+    function addChicken(c){ state.chickens.push(c); aliveEl.textContent = state.chickens.length; }
+    function spawnChickens(empire, n=1){ for(let i=0;i<n;i++){ const c = new Chicken(empire); addChicken(c);} }
+
+    // Buttons
+    document.getElementById('spawnA').addEventListener('click', ()=>spawnChickens('A',10));
+    document.getElementById('spawnB').addEventListener('click', ()=>spawnChickens('B',10));
+    document.getElementById('spawnA_inf').addEventListener('click', ()=>{ state.infA = !state.infA; document.getElementById('spawnA_inf').textContent = state.infA? 'Stop A' : 'Spawn infinite'; });
+    document.getElementById('spawnB_inf').addEventListener('click', ()=>{ state.infB = !state.infB; document.getElementById('spawnB_inf').textContent = state.infB? 'Stop B' : 'Spawn infinite'; });
+
+    document.getElementById('pause').addEventListener('click', ()=>{ state.running = !state.running; document.getElementById('pause').textContent = state.running? 'Pause' : 'Resume'; });
+    document.getElementById('clear').addEventListener('click', ()=>{ for(const c of state.chickens){ c.remove(); } state.chickens=[]; state.battles=0; state.glory=0; battlesEl.textContent='0'; gloryEl.textContent='0'; aliveEl.textContent='0'; });
+
+    // exchange
+    rateEl.addEventListener('input', ()=>{ state.exchangeRate = parseFloat(rateEl.value); rateValue.textContent = state.exchangeRate.toFixed(2); });
+    document.getElementById('exchangeSmall').addEventListener('click', ()=>{
+      const amt = 5000; // from A to B by default
+      if(state.wallets.A < amt) { postChat('❗ Not enough funds in Shubh Mehta\'s wallet.'); return; }
+      const converted = Math.floor(amt * state.exchangeRate);
+      state.wallets.A -= amt; state.wallets.B += converted;
+      postChat(`💱 Exchanged ${fmt(amt)} SM$ → ${fmt(converted)} DV₫ at rate ${state.exchangeRate.toFixed(2)}`);
+      updateWallets();
+    });
+
+    document.getElementById('swap').addEventListener('click', ()=>{
+      // swap currency labels
+      const a = curA.textContent; curA.textContent = curB.textContent; curB.textContent = a; postChat('🔁 Currencies swapped between empires (cosmic joke).');
+    });
+
+    /* ------- little autos that trade and spawn chickens based on wallets ------- */
+    setInterval(()=>{
+      // each empire spends a tiny fraction to spawn war chickens if balance high
+      if(state.wallets.A > 120000){ const cost = Math.floor(800 + Math.random()*600); state.wallets.A -= cost; spawnChickens('A', Math.random() < 0.6 ? 3 : 1); postChat(`🏦 Shubh's treasury spent ${fmt(cost)} to raise chickens.`); }
+      if(state.wallets.B > 120000){ const cost = Math.floor(800 + Math.random()*600); state.wallets.B -= cost; spawnChickens('B', Math.random() < 0.6 ? 3 : 1); postChat(`🏦 Duc's treasury spent ${fmt(cost)} to raise chickens.`); }
+      updateWallets();
+    },4200);
+
+    // friendly UI tooltip for clicks: clicking arena deposits a micro coin to nearest empire
+    arena.addEventListener('click', (e)=>{
+      const mid = arena.clientWidth/2; if(e.clientX < arena.getBoundingClientRect().left + mid){ state.wallets.A += 250; postChat('🪙 A citizen donated 250 coins to Shubh!'); } else { state.wallets.B += 250; postChat('🪙 A citizen donated 250 coins to Duc!'); } updateWallets();
+    });
+
+    // keep the canvas responsive
+    window.addEventListener('resize', ()=>{ /* nothing heavy — chickens will bounce based on new size */ });
+
+    // seed a few chickens and messages
+    spawnChickens('A',6); spawnChickens('B',6);
+    postChat('🌟 Welcome to the Money Exchange Arena! Watch infinite chickens, wallets, and ChatGPT envoys in absurd harmony.');
+  </script>
+</body>
+</html>
